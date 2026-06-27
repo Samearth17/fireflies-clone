@@ -1,39 +1,32 @@
 # Fireflies.ai Clone
 
-A full-stack meeting notes and transcription workspace inspired by Fireflies.ai. The app lets a demo user browse a seeded meeting library, search and filter meetings, open transcript detail pages, seek through transcript timestamps with a placeholder media player, review AI-style summaries, and manage action items.
+A full-stack meeting notes and transcription workspace inspired by Fireflies.ai. The app includes a searchable meetings library, interactive transcript playback, AI-style summaries, action item management, persistent SQLite storage, and realistic seeded demo data.
 
 ## Tech Stack
 
-- Frontend: Next.js App Router, TypeScript, Tailwind CSS, React Query, React Hook Form, Axios, lucide-react
-- Backend: Django, Django REST Framework, django-cors-headers
-- Database: SQLite for local development, with a portable relational schema
-- Deployment targets: Vercel/Netlify for frontend and Render/Railway-style Python hosts for backend
+- Frontend: Next.js App Router, TypeScript, Tailwind CSS, shadcn-style local UI components, React Query, React Hook Form, Axios
+- Backend: Django, Django REST Framework, SQLite
+- Database: SQLite for local development, schema designed to be portable to PostgreSQL
 
-## Architecture
+## Project Structure
 
 ```text
-Browser
-  -> Next.js frontend
-  -> Axios service layer at /frontend/services/api.ts
-  -> Django REST API under /api
-  -> SQLite via Django domain apps
+frontend/
+  app/
+  components/
+  hooks/
+  lib/
+  services/
+  types/
+
+backend/
+  config/
+  meetings/
+  transcripts/
+  summaries/
+  actions/
+  users/
 ```
-
-Backend domain boundaries:
-
-- `meetings`: meeting metadata, participants, API views, seed command
-- `transcripts`: transcript segment model and text/VTT/JSON parsing
-- `summaries`: one-to-one summary model and deterministic mock summary regeneration
-- `actions`: action item model and serializers
-- `users`: placeholder app for the single demo-user assumption
-
-Frontend boundaries:
-
-- `app`: Next routes and providers
-- `components/meetings`: dashboard, cards, create/edit/delete flows
-- `components/meeting-detail`: transcript, player, summary, action item, upload flows
-- `components/ui`: local reusable controls
-- `hooks`, `services`, `types`, `lib`: data fetching, API calls, shared types, utilities
 
 ## Local Setup
 
@@ -59,24 +52,6 @@ pnpm dev
 
 Open `http://localhost:3000`. The frontend expects the API at `http://localhost:8000/api` unless `NEXT_PUBLIC_API_URL` is set.
 
-## Environment Variables
-
-Backend:
-
-| Name | Example | Notes |
-| --- | --- | --- |
-| `DJANGO_SECRET_KEY` | `replace-me` | Required in production. |
-| `DJANGO_DEBUG` | `False` | Use `False` for deployed environments. |
-| `DJANGO_ALLOWED_HOSTS` | `api.example.com,localhost` | Comma-separated Django hosts. |
-| `CORS_ALLOWED_ORIGINS` | `https://app.example.com` | Comma-separated frontend origins. |
-| `CORS_ALLOW_ALL_ORIGINS` | `False` | Keep false outside local experiments. |
-
-Frontend:
-
-| Name | Example | Notes |
-| --- | --- | --- |
-| `NEXT_PUBLIC_API_URL` | `https://api.example.com/api` | Must include the `/api` suffix. |
-
 ## API Overview
 
 - `GET /api/health`
@@ -95,22 +70,13 @@ Frontend:
 - `PUT /api/actions/{id}`
 - `DELETE /api/actions/{id}`
 
-Validation errors return:
-
-```json
-{
-  "error": "Validation failed",
-  "details": {}
-}
-```
-
 ## Database Schema
 
-- `Meeting`: title, meeting date, duration, created/updated timestamps
-- `Participant`: meeting foreign key, name, optional email
-- `TranscriptSegment`: meeting foreign key, speaker, start/end timestamps, transcript text
-- `Summary`: one-to-one meeting foreign key, overview, key topics, decisions
-- `ActionItem`: meeting foreign key, description, owner, due date, completion state, created timestamp
+- `Meeting`: title, meeting date, duration, timestamps
+- `Participant`: meeting FK, name, optional email
+- `TranscriptSegment`: meeting FK, speaker, start/end timestamps, transcript text
+- `Summary`: one-to-one meeting FK, overview, key topics, decisions
+- `ActionItem`: meeting FK, description, owner, due date, completion state
 
 Deleting a meeting cascades participants, transcript segments, summary, and action items.
 
@@ -122,70 +88,16 @@ Run:
 python manage.py seed_data
 ```
 
-The seed command creates 10 realistic meetings, 40-60 participants, 120-250 transcript segments, 10 summaries, and 50 action items. Authentication is intentionally omitted, so the app assumes one default logged-in demo user.
-
-## Verification
-
-Backend:
-
-```bash
-cd backend
-python manage.py check
-python manage.py test
-```
-
-Frontend:
-
-```bash
-cd frontend
-pnpm typecheck
-pnpm build
-```
-
-Manual smoke checks:
-
-- Start Django and Next.js.
-- Confirm the dashboard loads seeded meetings.
-- Search by title and participant.
-- Create, edit, and delete a meeting.
-- Open a meeting, click transcript timestamps, move the media seek bar, and search transcript text.
-- Upload or paste a transcript and regenerate the summary.
-- Add, edit, complete, and delete action items.
-- Check desktop and mobile layouts.
+The seed command creates 10 realistic meetings, 40-60 participants, 120-250 transcript segments, 10 summaries, and 50 action items.
 
 ## Deployment
 
-Backend deployment:
+Backend can deploy to Render, Railway, or similar Python hosts. Set `DEBUG=False`, provide a production `SECRET_KEY`, and run migrations before startup.
 
-```bash
-cd backend
-pip install -r requirements.txt
-python manage.py migrate
-python manage.py collectstatic --noinput
-gunicorn config.wsgi:application
-```
-
-Set `DJANGO_DEBUG=False`, a strong `DJANGO_SECRET_KEY`, production `DJANGO_ALLOWED_HOSTS`, and `CORS_ALLOWED_ORIGINS` containing the deployed frontend URL. A `backend/Procfile` is included for hosts that detect Procfile web commands.
-
-Frontend deployment:
-
-```bash
-cd frontend
-pnpm install
-pnpm build
-pnpm start
-```
-
-Set `NEXT_PUBLIC_API_URL` to the deployed Django base URL ending in `/api`. Vercel can use the `frontend/` directory as the project root.
-
-Submission placeholders:
-
-- GitHub repository: add public repository URL here.
-- Deployed application: add hosted frontend URL here.
-- Deployed API: add hosted backend URL here.
+Frontend can deploy to Vercel or Netlify. Set `NEXT_PUBLIC_API_URL` to the deployed Django API base URL ending in `/api`.
 
 ## Assumptions
 
-- Real-time meeting bots, actual speech-to-text transcription, integrations, team sharing, and real authentication are out of scope.
-- AI summaries are deterministic mock summaries generated from transcript text.
-- Uploaded transcript content can be plain text, VTT-style text, or JSON segments accepted by the backend parser.
+- Authentication is intentionally omitted; the app assumes one demo user.
+- Real speech-to-text, live meeting bots, integrations, and team sharing are placeholders.
+- Summary regeneration is deterministic and mocked from transcript text.
