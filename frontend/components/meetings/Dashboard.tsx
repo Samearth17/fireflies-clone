@@ -11,7 +11,7 @@ import { Input } from "@/components/ui/Input";
 import { Skeleton } from "@/components/ui/Skeleton";
 import { useToast } from "@/components/ui/Toast";
 import { useMeetings } from "@/hooks/useMeetings";
-import { createMeeting, deleteMeeting, updateMeeting } from "@/services/api";
+import { createMeeting, deleteMeeting, getApiErrorMessage, updateMeeting } from "@/services/api";
 import type { MeetingListItem, MeetingPayload } from "@/types";
 
 import { ConfirmDialog } from "./ConfirmDialog";
@@ -39,7 +39,7 @@ export function Dashboard() {
       setFormOpen(false);
       showToast("Meeting created");
     },
-    onError: () => showToast("Could not create meeting", "error"),
+    onError: (error) => showToast(getApiErrorMessage(error, "Could not create meeting"), "error"),
   });
 
   const updateMutation = useMutation({
@@ -49,7 +49,7 @@ export function Dashboard() {
       setFormOpen(false);
       showToast("Meeting updated");
     },
-    onError: () => showToast("Could not update meeting", "error"),
+    onError: (error) => showToast(getApiErrorMessage(error, "Could not update meeting"), "error"),
   });
 
   const deleteMutation = useMutation({
@@ -59,7 +59,7 @@ export function Dashboard() {
       setConfirmOpen(false);
       showToast("Meeting deleted");
     },
-    onError: () => showToast("Could not delete meeting", "error"),
+    onError: (error) => showToast(getApiErrorMessage(error, "Could not delete meeting"), "error"),
   });
 
   return (

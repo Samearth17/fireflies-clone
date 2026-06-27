@@ -70,6 +70,22 @@ class MeetingWriteSerializer(serializers.ModelSerializer):
             raise serializers.ValidationError("Duration must be greater than or equal to 0.")
         return value
 
+    def validate_participants(self, value: list[str]) -> list[str]:
+        cleaned: list[str] = []
+        seen: set[str] = set()
+        for name in value:
+            participant = name.strip()
+            if not participant:
+                continue
+            key = participant.lower()
+            if key in seen:
+                continue
+            seen.add(key)
+            cleaned.append(participant)
+        if len(cleaned) > 20:
+            raise serializers.ValidationError("A meeting can include at most 20 participants.")
+        return cleaned
+
     @transaction.atomic
     def create(self, validated_data):
         participants = validated_data.pop("participants", [])
@@ -89,5 +105,4 @@ class MeetingWriteSerializer(serializers.ModelSerializer):
 
     def _sync_participants(self, meeting: Meeting, participants: list[str]) -> None:
         meeting.participants.all().delete()
-        names = [name.strip() for name in participants if name.strip()]
-        Participant.objects.bulk_create([Participant(meeting=meeting, name=name) for name in names])
+        Participant.objects.bulk_create([Participant(meeting=meeting, name=name) for name in participants])

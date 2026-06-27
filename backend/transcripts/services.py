@@ -7,6 +7,10 @@ TIMESTAMP_PATTERN = re.compile(r"(?:(\d{1,2}):)?(\d{1,2}):(\d{2})(?:[.,]\d{1,3})
 SPEAKER_LINE_PATTERN = re.compile(r"^\s*(?:\[(?P<stamp>[^\]]+)\]\s*)?(?P<speaker>[A-Za-z][\w .'-]{1,40}):\s*(?P<text>.+)$")
 
 
+class TranscriptParseError(ValueError):
+    pass
+
+
 def parse_timestamp(value: str | int | float | None, fallback: int = 0) -> int:
     if value is None:
         return fallback
@@ -26,9 +30,14 @@ def parse_timestamp(value: str | int | float | None, fallback: int = 0) -> int:
 
 def parse_transcript_payload(payload: dict[str, Any]) -> list[dict[str, Any]]:
     raw_segments = payload.get("segments")
-    if raw_segments:
+    if raw_segments is not None and raw_segments != "":
         if isinstance(raw_segments, str):
-            raw_segments = json.loads(raw_segments)
+            try:
+                raw_segments = json.loads(raw_segments)
+            except json.JSONDecodeError as exc:
+                raise TranscriptParseError("Segments must be valid JSON.") from exc
+        if not isinstance(raw_segments, list):
+            raise TranscriptParseError("Segments must be a list.")
         return [_normalize_segment(segment, index) for index, segment in enumerate(raw_segments)]
 
     text = payload.get("text") or payload.get("transcript") or payload.get("vtt") or ""
@@ -42,16 +51,32 @@ def parse_transcript_payload(payload: dict[str, Any]) -> list[dict[str, Any]]:
 
 
 def _normalize_segment(segment: dict[str, Any], index: int) -> dict[str, Any]:
-    start = parse_timestamp(segment.get("start_time_seconds") or segment.get("start") or segment.get("timestamp"), index * 30)
-    end = parse_timestamp(segment.get("end_time_seconds") or segment.get("end"), start + 20)
+    if not isinstance(segment, dict):
+        raise TranscriptParseError("Each transcript segment must be an object.")
+
+    start = parse_timestamp(_first_present(segment, "start_time_seconds", "start", "timestamp"), index * 30)
+    end = parse_timestamp(_first_present(segment, "end_time_seconds", "end"), start + 20)
+    if end < start:
+        raise TranscriptParseError("Segment end time must be after start time.")
     text = str(segment.get("text") or segment.get("transcript_text") or "").strip()
     speaker = str(segment.get("speaker") or segment.get("speaker_name") or "Speaker").strip()
+    if not speaker:
+        raise TranscriptParseError("Speaker is required for every segment.")
+    if not text:
+        raise TranscriptParseError("Transcript text is required for every segment.")
     return {
         "speaker_name": speaker,
         "start_time_seconds": start,
-        "end_time_seconds": max(end, start),
+        "end_time_seconds": end,
         "transcript_text": text,
     }
+
+
+def _first_present(segment: dict[str, Any], *keys: str) -> Any:
+    for key in keys:
+        if key in segment and segment[key] is not None and segment[key] != "":
+            return segment[key]
+    return None
 
 
 def _parse_plain_text(text: str) -> list[dict[str, Any]]:

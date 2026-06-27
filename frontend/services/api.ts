@@ -76,3 +76,15 @@ export async function updateAction(id: number, payload: Partial<Pick<ActionItem,
 export async function deleteAction(id: number) {
   await api.delete(`/actions/${id}`);
 }
+
+export function getApiErrorMessage(error: unknown, fallback: string) {
+  if (!axios.isAxiosError(error)) return fallback;
+  const data = error.response?.data as { error?: string; details?: Record<string, string | string[]> } | undefined;
+  if (!data) return fallback;
+  if (data.details && typeof data.details === "object") {
+    const firstDetail = Object.values(data.details)[0];
+    if (Array.isArray(firstDetail)) return firstDetail[0] ?? data.error ?? fallback;
+    if (typeof firstDetail === "string") return firstDetail;
+  }
+  return data.error ?? fallback;
+}

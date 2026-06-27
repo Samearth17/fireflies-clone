@@ -12,7 +12,7 @@ import { Skeleton } from "@/components/ui/Skeleton";
 import { useToast } from "@/components/ui/Toast";
 import { MeetingFormModal } from "@/components/meetings/MeetingFormModal";
 import { cn } from "@/lib/utils";
-import { createAction, deleteAction, getMeeting, regenerateSummary, updateAction, updateMeeting, uploadTranscript } from "@/services/api";
+import { createAction, deleteAction, getApiErrorMessage, getMeeting, regenerateSummary, updateAction, updateMeeting, uploadTranscript } from "@/services/api";
 import type { MeetingListItem, MeetingPayload } from "@/types";
 
 import { ActionItemsPanel } from "./ActionItemsPanel";
@@ -50,7 +50,7 @@ export function MeetingDetailPage({ meetingId }: { meetingId: number }) {
       setEditOpen(false);
       showToast("Meeting updated");
     },
-    onError: () => showToast("Could not update meeting", "error"),
+    onError: (error) => showToast(getApiErrorMessage(error, "Could not update meeting"), "error"),
   });
 
   const uploadMutation = useMutation({
@@ -60,7 +60,7 @@ export function MeetingDetailPage({ meetingId }: { meetingId: number }) {
       setUploadOpen(false);
       showToast("Upload successful");
     },
-    onError: () => showToast("Could not upload transcript", "error"),
+    onError: (error) => showToast(getApiErrorMessage(error, "Could not upload transcript"), "error"),
   });
 
   const summaryMutation = useMutation({
@@ -69,7 +69,7 @@ export function MeetingDetailPage({ meetingId }: { meetingId: number }) {
       invalidateMeeting();
       showToast("Summary regenerated");
     },
-    onError: () => showToast("Could not regenerate summary", "error"),
+    onError: (error) => showToast(getApiErrorMessage(error, "Could not regenerate summary"), "error"),
   });
 
   const createActionMutation = useMutation({
@@ -79,7 +79,7 @@ export function MeetingDetailPage({ meetingId }: { meetingId: number }) {
       invalidateMeeting();
       showToast("Action item added");
     },
-    onError: () => showToast("Could not add action item", "error"),
+    onError: (error) => showToast(getApiErrorMessage(error, "Could not add action item"), "error"),
   });
 
   const updateActionMutation = useMutation({
@@ -88,7 +88,7 @@ export function MeetingDetailPage({ meetingId }: { meetingId: number }) {
       invalidateMeeting();
       showToast("Action updated");
     },
-    onError: () => showToast("Could not update action", "error"),
+    onError: (error) => showToast(getApiErrorMessage(error, "Could not update action"), "error"),
   });
 
   const deleteActionMutation = useMutation({
@@ -97,7 +97,7 @@ export function MeetingDetailPage({ meetingId }: { meetingId: number }) {
       invalidateMeeting();
       showToast("Action deleted");
     },
-    onError: () => showToast("Could not delete action", "error"),
+    onError: (error) => showToast(getApiErrorMessage(error, "Could not delete action"), "error"),
   });
 
   if (isLoading) {

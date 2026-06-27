@@ -95,14 +95,16 @@ export function MeetingFormModal({ open, mode, meeting, onClose, onSubmit }: Mee
           <FieldLabel>Participants</FieldLabel>
           <Input {...register("participants")} placeholder="Alice, Bob, Priya" />
         </div>
-        <div className="space-y-2">
-          <FieldLabel>Transcript paste</FieldLabel>
-          <Textarea
-            {...register("text")}
-            placeholder="[00:00] Alice: Welcome everyone.
+        {mode === "create" ? (
+          <div className="space-y-2">
+            <FieldLabel>Transcript paste</FieldLabel>
+            <Textarea
+              {...register("text")}
+              placeholder="[00:00] Alice: Welcome everyone.
 [00:18] Bob: The dashboard search is ready for review."
-          />
-        </div>
+            />
+          </div>
+        ) : null}
         <div className="flex flex-col-reverse gap-2 pt-2 sm:flex-row sm:justify-end">
           <Button type="button" variant="secondary" onClick={onClose}>
             Cancel

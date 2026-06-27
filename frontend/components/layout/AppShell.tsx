@@ -5,10 +5,12 @@ import Link from "next/link";
 import { useState } from "react";
 
 import { Button } from "@/components/ui/Button";
+import { useToast } from "@/components/ui/Toast";
 import { cn } from "@/lib/utils";
 
 export function AppShell({ children, active = "meetings" }: { children: React.ReactNode; active?: "meetings" | "search" | "settings" }) {
   const [drawerOpen, setDrawerOpen] = useState(false);
+  const { showToast } = useToast();
 
   const nav = (
     <nav className="flex h-full flex-col">
@@ -21,8 +23,8 @@ export function AppShell({ children, active = "meetings" }: { children: React.Re
       </Link>
       <div className="space-y-1">
         <SidebarItem href="/" icon={<CalendarDays className="h-5 w-5" />} label="Meetings" active={active === "meetings"} />
-        <SidebarItem href="/" icon={<Search className="h-5 w-5" />} label="Search" active={active === "search"} />
-        <SidebarItem href="/" icon={<Settings className="h-5 w-5" />} label="Settings" active={active === "settings"} />
+        <SidebarButton icon={<Search className="h-5 w-5" />} label="Search" active={active === "search"} onClick={() => showToast("Global search coming soon", "info")} />
+        <SidebarButton icon={<Settings className="h-5 w-5" />} label="Settings" active={active === "settings"} onClick={() => showToast("Settings coming soon", "info")} />
       </div>
       <div className="mt-auto rounded-2xl border border-line bg-white p-3">
         <div className="flex items-center gap-3">
@@ -65,6 +67,22 @@ export function AppShell({ children, active = "meetings" }: { children: React.Re
       )}
       <main className="lg:pl-64">{children}</main>
     </div>
+  );
+}
+
+function SidebarButton({ icon, label, active, onClick }: { icon: React.ReactNode; label: string; active: boolean; onClick: () => void }) {
+  return (
+    <button
+      type="button"
+      className={cn(
+        "focus-ring flex w-full items-center gap-3 rounded-xl px-3 py-2 text-left text-sm font-medium transition",
+        active ? "bg-white text-primary shadow-sm" : "text-slate-600 hover:bg-white hover:text-ink",
+      )}
+      onClick={onClick}
+    >
+      {icon}
+      {label}
+    </button>
   );
 }
 

@@ -3,6 +3,7 @@ from django.db.models import Count, Q
 from django.shortcuts import get_object_or_404
 from django.utils.dateparse import parse_date
 from rest_framework import status
+from rest_framework.exceptions import ValidationError
 from rest_framework.response import Response
 from rest_framework.views import APIView
 
@@ -13,7 +14,7 @@ from summaries.serializers import SummarySerializer
 from summaries.services import regenerate_summary
 from transcripts.models import TranscriptSegment
 from transcripts.serializers import TranscriptSegmentSerializer
-from transcripts.services import parse_transcript_payload
+from transcripts.services import TranscriptParseError, parse_transcript_payload
 
 from .models import Meeting
 from .serializers import MeetingDetailSerializer, MeetingListSerializer, MeetingWriteSerializer
@@ -28,9 +29,12 @@ class MeetingCollectionView(APIView):
         date_value = request.query_params.get("date", "").strip()
         if date_value:
             parsed_date = parse_date(date_value)
-            if parsed_date:
-                meetings = meetings.filter(meeting_date__date=parsed_date)
+            if not parsed_date:
+                raise ValidationError({"date": "Use YYYY-MM-DD format."})
+            meetings = meetings.filter(meeting_date__date=parsed_date)
         sort = request.query_params.get("sort", "recent")
+        if sort not in {"recent", "oldest"}:
+            raise ValidationError({"sort": "Use 'recent' or 'oldest'."})
         meetings = meetings.order_by("meeting_date" if sort == "oldest" else "-meeting_date")
         return Response(MeetingListSerializer(meetings, many=True).data)
 
@@ -141,17 +145,18 @@ def _get_meeting(meeting_id: int) -> Meeting:
 
 
 def _replace_transcript(meeting: Meeting, payload: dict) -> list[TranscriptSegment]:
-    parsed_segments = parse_transcript_payload(payload)
+    try:
+        parsed_segments = parse_transcript_payload(payload)
+    except TranscriptParseError as exc:
+        raise ValidationError({"transcript": str(exc)}) from exc
     if not parsed_segments:
-        from rest_framework.exceptions import ValidationError
-
         raise ValidationError({"transcript": "At least one transcript segment is required."})
     previous_start = -1
     for segment in parsed_segments:
         if segment["start_time_seconds"] < previous_start:
-            from rest_framework.exceptions import ValidationError
-
             raise ValidationError({"transcript": "Transcript timestamps must be chronological."})
+        if segment["end_time_seconds"] < segment["start_time_seconds"]:
+            raise ValidationError({"transcript": "Transcript segment end times must be after start times."})
         previous_start = segment["start_time_seconds"]
     meeting.transcript_segments.all().delete()
     created = [
@@ -165,4 +170,6 @@ def _replace_transcript(meeting: Meeting, payload: dict) -> list[TranscriptSegme
         for segment in parsed_segments
         if segment["transcript_text"].strip()
     ]
+    if not created:
+        raise ValidationError({"transcript": "At least one transcript segment is required."})
     return TranscriptSegment.objects.bulk_create(created)

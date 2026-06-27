@@ -1,4 +1,4 @@
-import type { ButtonHTMLAttributes } from "react";
+import { forwardRef, type ButtonHTMLAttributes } from "react";
 
 import { cn } from "@/lib/utils";
 
@@ -7,7 +7,7 @@ interface ButtonProps extends ButtonHTMLAttributes<HTMLButtonElement> {
   size?: "sm" | "md" | "icon";
 }
 
-export function Button({ className, variant = "primary", size = "md", ...props }: ButtonProps) {
+export const Button = forwardRef<HTMLButtonElement, ButtonProps>(function Button({ className, variant = "primary", size = "md", ...props }, ref) {
   const variants = {
     primary: "bg-primary text-white hover:bg-indigo-700",
     secondary: "border border-line bg-white text-ink hover:bg-slate-50",
@@ -28,7 +28,8 @@ export function Button({ className, variant = "primary", size = "md", ...props }
         sizes[size],
         className,
       )}
+      ref={ref}
       {...props}
     />
   );
-}
+});

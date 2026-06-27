@@ -1,6 +1,6 @@
 "use client";
 
-import { Calendar, Clock3, MoreHorizontal, Pencil, Trash2 } from "lucide-react";
+import { Calendar, Clock3, Pencil, Trash2 } from "lucide-react";
 import Link from "next/link";
 
 import { Button } from "@/components/ui/Button";
@@ -59,9 +59,6 @@ export function MeetingCard({ meeting, onEdit, onDelete }: MeetingCardProps) {
             }}
           >
             <Trash2 className="h-4 w-4 text-danger" />
-          </Button>
-          <Button type="button" variant="ghost" size="icon" aria-label="More meeting actions" title="More">
-            <MoreHorizontal className="h-4 w-4" />
           </Button>
         </div>
       </div>
