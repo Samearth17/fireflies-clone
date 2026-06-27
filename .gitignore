@@ -1,46 +1,38 @@
-# =========================
+
 # Python
-# =========================
 backend/.venv/
 backend/__pycache__/
 **/__pycache__/
 *.py[cod]
 *.sqlite3
 
-# =========================
+
 # Django
-# =========================
+
 backend/media/
 backend/staticfiles/
 
-# =========================
+
 # Node / Next.js
-# =========================
 frontend/node_modules/
 frontend/.next/
 frontend/out/
 frontend/.turbo/
 
-# =========================
+
 # Environment variables
-# =========================
 .env
 .env.*
 !.env.example
 
-# =========================
+
 # macOS
-# =========================
 .DS_Store
 
-# =========================
 # VS Code
-# =========================
 .vscode/
 
-# =========================
 # Logs
-# =========================
 *.log
 npm-debug.log*
 pnpm-debug.log*
