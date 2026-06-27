@@ -1,0 +1,13 @@
+.DS_Store
+*.pyc
+__pycache__/
+.venv/
+venv/
+db.sqlite3
+.env
+.next/
+node_modules/
+dist/
+coverage/
+backend/staticfiles/
+frontend/.env.local
